@@ -1,0 +1,60 @@
+# Removing all documents
+rm(list=ls())
+
+# Packages
+lapply(c('quantmod','neuralnet','scales','RSNNS'),require, character.only = TRUE)
+
+# Importing data
+inicio = as.Date("2013-01-01")
+fim = as.Date("2019-04-01") 
+ativo<-getSymbols("PETR4.SA", src="yahoo",from=inicio,to=fim,auto.assign=F,warnings=F)
+
+# Remove NA's
+ativo<-ativo[!is.na(ativo[,1]),]
+
+# Data for neuralnet
+t5<-as.numeric(Cl(ativo))
+t5<-t5[-((length(t5)-4):length(t5))]
+t4<-as.numeric(Cl(ativo)) [-1]       #Quatro dias antes
+t4<-t4[-((length(t4)-3):length(t4))]
+t3<-as.numeric(Cl(ativo)) [-c(1,2)]  #Três dias antes
+t3<-t3[-((length(t3)-2):length(t3))]
+t2<-as.numeric(Cl(ativo)) [-(1:3)]   #Dois dias antes
+t2<-t2[-((length(t2)-1):length(t2))]
+t1<-as.numeric(Cl(ativo)) [-(1:4)]   #Um dia antes
+t1<-t1[-length(t5)]
+t0<-as.numeric(Cl(ativo)) [-(1:5)]   #Variável dependente
+dados<-cbind(t5,t4,t3,t2,t1,t0)
+dados
+
+# Data for training
+dados.Treina<-dados[1:round(nrow(dados)/2,0),]
+
+# Data for validation
+dados.Valida<-dados[(round(nrow(dados)/2,0)+1):nrow(dados),]
+
+
+#Rescale
+dados.Treina<-rescale(dados.Treina)
+dados.Valida<-rescale(dados.Valida)
+
+# Training
+set.seed(1)
+maxit<-as.integer(100000)
+nn <- neuralnet(t0~t1+t2+t3+t4+t5,data=dados.Treina, 
+                hidden=2,stepmax= maxit)
+# Plot
+plot(nn)
+
+# RNA MLP Prediction
+rna<-compute(nn,dados.Valida[,1:5])
+
+# Linear Model Prediction
+fitt<-lm(t0~t1+t2+t3+t4+t5,data=data.frame(dados.Treina))
+lm<-predict(fitt,data.frame(dados.Valida[,1:5]))
+
+
+plot(dados.Valida[,6], type="l")
+lines(rna$net.result, type="l", col="red")
+lines(lm, type="l", col="blue")
+
