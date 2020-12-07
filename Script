@@ -15,15 +15,15 @@ ativo<-ativo[!is.na(ativo[,1]),]
 # Data for neuralnet
 t5<-as.numeric(Cl(ativo))
 t5<-t5[-((length(t5)-4):length(t5))]
-t4<-as.numeric(Cl(ativo)) [-1]       #Quatro dias antes
+t4<-as.numeric(Cl(ativo)) [-1]       
 t4<-t4[-((length(t4)-3):length(t4))]
-t3<-as.numeric(Cl(ativo)) [-c(1,2)]  #Três dias antes
+t3<-as.numeric(Cl(ativo)) [-c(1,2)]  
 t3<-t3[-((length(t3)-2):length(t3))]
-t2<-as.numeric(Cl(ativo)) [-(1:3)]   #Dois dias antes
+t2<-as.numeric(Cl(ativo)) [-(1:3)]   
 t2<-t2[-((length(t2)-1):length(t2))]
-t1<-as.numeric(Cl(ativo)) [-(1:4)]   #Um dia antes
+t1<-as.numeric(Cl(ativo)) [-(1:4)]   
 t1<-t1[-length(t5)]
-t0<-as.numeric(Cl(ativo)) [-(1:5)]   #Variável dependente
+t0<-as.numeric(Cl(ativo)) [-(1:5)]  
 dados<-cbind(t5,t4,t3,t2,t1,t0)
 dados
 
@@ -54,7 +54,12 @@ fitt<-lm(t0~t1+t2+t3+t4+t5,data=data.frame(dados.Treina))
 lm<-predict(fitt,data.frame(dados.Valida[,1:5]))
 
 
+#Prediction
 plot(dados.Valida[,6], type="l")
 lines(rna$net.result, type="l", col="red")
 lines(lm, type="l", col="blue")
+
+# Other package: RSNNS
+mlp<-mlp(dados.Valida[,1:5], dados.Valida[,6], size = 2)
+predict(mlp)
 
